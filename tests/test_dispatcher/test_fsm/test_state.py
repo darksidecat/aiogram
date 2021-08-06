@@ -139,8 +139,7 @@ class TestStatesGroup:
         assert MyGroup.state1 not in MyGroup.MyNestedGroup
         assert MyGroup.state1 in MyGroup
 
-        # Not working as well
-        # assert MyGroup.MyNestedGroup in MyGroup
+        assert MyGroup.MyNestedGroup in MyGroup
 
         assert "MyGroup.MyNestedGroup:state1" in MyGroup
         assert "MyGroup.MyNestedGroup:state1" in MyGroup.MyNestedGroup
@@ -148,5 +147,85 @@ class TestStatesGroup:
         assert MyGroup.state1 not in MyGroup.MyNestedGroup
         assert "test" not in MyGroup
         assert 42 not in MyGroup
+
+        assert MyGroup.MyNestedGroup.get_root() is MyGroup
+
+    def test_empty_filter(self):
+        class MyGroup(StatesGroup):
+            pass
+
+        assert MyGroup().__states__ == ()
+        assert MyGroup().__state_names__ == ()
+        assert MyGroup().__all_childs__ == ()
+        assert MyGroup().__all_states__ == ()
+        assert MyGroup().__all_states_names__ == ()
+        assert MyGroup().__parent__ is None
+        assert MyGroup().__full_group_name__ == "MyGroup"
+
+        assert str(MyGroup()) == "<StatesGroup 'MyGroup'>"
+
+    def test_with_state_filter(self):
+        class MyGroup(StatesGroup):
+            state1 = State()
+            state2 = State()
+
+        assert MyGroup()(None, "MyGroup:state1")
+        assert MyGroup()(None, "MyGroup:state2")
+
+        assert MyGroup().__states__ == (MyGroup.state1, MyGroup.state2)
+        assert MyGroup().__state_names__ == ("MyGroup:state1", "MyGroup:state2")
+        assert MyGroup().__all_childs__ == ()
+        assert MyGroup().__all_states__ == (MyGroup.state1, MyGroup.state2)
+        assert MyGroup().__parent__ is None
+        assert MyGroup().__full_group_name__ == "MyGroup"
+
+        assert str(MyGroup()) == "<StatesGroup 'MyGroup'>"
+
+        assert MyGroup().state1.state == "MyGroup:state1"
+        assert MyGroup().state1.group == MyGroup
+
+    def test_nested_group_filter(self):
+        class MyGroup(StatesGroup):
+            state1 = State()
+
+            class MyNestedGroup(StatesGroup):
+                state1 = State()
+
+        assert MyGroup()(None, "MyGroup:state1")
+        assert MyGroup.MyNestedGroup()(None, "MyGroup.MyNestedGroup:state1")
+        assert MyGroup()(None, "MyGroup.MyNestedGroup:state1")
+        assert not MyGroup.MyNestedGroup()(None, "MyGroup:state1")
+
+        assert MyGroup().__states__ == (MyGroup.state1,)
+        assert MyGroup().__state_names__ == ("MyGroup:state1",)
+        assert MyGroup().__all_childs__ == (MyGroup.MyNestedGroup,)
+        assert MyGroup().__all_states__ == (MyGroup.state1, MyGroup.MyNestedGroup.state1)
+        assert MyGroup().__parent__ is None
+        assert MyGroup().MyNestedGroup.__parent__ is MyGroup
+        assert MyGroup().__full_group_name__ == "MyGroup"
+        assert MyGroup().MyNestedGroup.__full_group_name__ == "MyGroup.MyNestedGroup"
+
+        assert str(MyGroup()) == "<StatesGroup 'MyGroup'>"
+        assert str(MyGroup().MyNestedGroup) == "<StatesGroup 'MyGroup.MyNestedGroup'>"
+
+        assert MyGroup().state1.state == "MyGroup:state1"
+        assert MyGroup().state1.group == MyGroup
+
+        assert MyGroup().MyNestedGroup.state1.state == "MyGroup.MyNestedGroup:state1"
+        assert MyGroup().MyNestedGroup.state1.group == MyGroup.MyNestedGroup
+
+        assert MyGroup().MyNestedGroup.state1 in MyGroup.MyNestedGroup
+        assert MyGroup().MyNestedGroup.state1 in MyGroup
+        assert MyGroup().state1 not in MyGroup().MyNestedGroup
+        assert MyGroup().state1 in MyGroup()
+
+        assert MyGroup().MyNestedGroup in MyGroup()
+
+        assert "MyGroup.MyNestedGroup:state1" in MyGroup()
+        assert "MyGroup.MyNestedGroup:state1" in MyGroup().MyNestedGroup
+
+        assert MyGroup().state1 not in MyGroup().MyNestedGroup
+        assert "test" not in MyGroup()
+        assert 42 not in MyGroup()
 
         assert MyGroup.MyNestedGroup.get_root() is MyGroup

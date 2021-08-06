@@ -61,6 +61,15 @@ class StatesGroupMeta(type):
     __states__: Tuple[State, ...]
     __state_names__: Tuple[str, ...]
 
+    @classmethod
+    def __prepare__(mcs, name, bases):
+        namespace = dict()
+        properties = inspect.getmembers(mcs, lambda m: isinstance(m, property))
+        for (name, property_) in properties:
+            namespace[name] = property_
+
+        return namespace
+
     @no_type_check
     def __new__(mcs, name, bases, namespace, **kwargs):
         cls = super(StatesGroupMeta, mcs).__new__(mcs, name, bases, namespace)
@@ -80,13 +89,21 @@ class StatesGroupMeta(type):
         cls.__states__ = tuple(states)
         cls.__state_names__ = tuple(state.state for state in states)
 
+        cls.__contains__ = mcs.__contains__
+        cls.__str__ = mcs.__str__
+
         return cls
 
     @property
     def __full_group_name__(cls) -> str:
-        if cls.__parent__:
-            return ".".join((cls.__parent__.__full_group_name__, cls.__name__))
-        return cls.__name__
+        if type(cls) == StatesGroupMeta:
+            if cls.__parent__:
+                return ".".join((cls.__parent__.__full_group_name__, cls.__name__))
+            return cls.__name__
+        else:
+            if cls.__parent__:
+                return ".".join((cls.__parent__.__full_group_name__, cls.__class__.__name__))
+            return cls.__class__.__name__
 
     @property
     def __all_childs__(cls) -> Tuple[Type["StatesGroup"], ...]:
@@ -111,8 +128,8 @@ class StatesGroupMeta(type):
             return item in cls.__all_states_names__
         if isinstance(item, State):
             return item in cls.__all_states__
-        # if isinstance(item, StatesGroup):
-        #     return item in cls.__all_childs__
+        if isinstance(item, StatesGroupMeta):
+            return item in cls.__all_childs__
         return False
 
     def __str__(self) -> str:
@@ -120,14 +137,19 @@ class StatesGroupMeta(type):
 
 
 class StatesGroup(metaclass=StatesGroupMeta):
+    __full_group_name__: str
+    __all_childs__: Tuple[Type["StatesGroup"], ...]
+    __all_states__: Tuple[State, ...]
+    __all_states_names__: Tuple[str, ...]
+
     @classmethod
     def get_root(cls) -> Type["StatesGroup"]:
         if cls.__parent__ is None:
             return cls
         return cls.__parent__.get_root()
 
-    # def __call__(cls, event: TelegramObject, raw_state: Optional[str] = None) -> bool:
-    #     return raw_state in cls.__all_states_names__
+    def __call__(cls, event: TelegramObject, raw_state: Optional[str] = None) -> bool:
+        return raw_state in cls.__all_states_names__
 
 
 default_state = State()
