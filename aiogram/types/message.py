@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import functools
 from typing import TYPE_CHECKING, List, Optional, Union
 
 from pydantic import Field
@@ -189,6 +190,288 @@ class Message(TelegramObject):
     """*Optional*. Service message: new participants invited to a voice chat"""
     reply_markup: Optional[InlineKeyboardMarkup] = None
     """*Optional*. Inline keyboard attached to the message. :code:`login_url` buttons are represented as ordinary :code:`url` buttons."""
+
+    def __hash__(self):
+        return hash((type(self), self.message_id, self.chat.id, self.date))
+
+    @property
+    @functools.cache
+    def content_type_last_cached(self) -> str:
+        if self.audio:
+            return ContentType.AUDIO
+        if self.animation:
+            return ContentType.ANIMATION
+        if self.document:
+            return ContentType.DOCUMENT
+        if self.game:
+            return ContentType.GAME
+        if self.photo:
+            return ContentType.PHOTO
+        if self.sticker:
+            return ContentType.STICKER
+        if self.video:
+            return ContentType.VIDEO
+        if self.video_note:
+            return ContentType.VIDEO_NOTE
+        if self.voice:
+            return ContentType.VOICE
+        if self.contact:
+            return ContentType.CONTACT
+        if self.venue:
+            return ContentType.VENUE
+        if self.location:
+            return ContentType.LOCATION
+        if self.new_chat_members:
+            return ContentType.NEW_CHAT_MEMBERS
+        if self.left_chat_member:
+            return ContentType.LEFT_CHAT_MEMBER
+        if self.invoice:
+            return ContentType.INVOICE
+        if self.successful_payment:
+            return ContentType.SUCCESSFUL_PAYMENT
+        if self.connected_website:
+            return ContentType.CONNECTED_WEBSITE
+        if self.migrate_from_chat_id:
+            return ContentType.MIGRATE_FROM_CHAT_ID
+        if self.migrate_to_chat_id:
+            return ContentType.MIGRATE_TO_CHAT_ID
+        if self.pinned_message:
+            return ContentType.PINNED_MESSAGE
+        if self.new_chat_title:
+            return ContentType.NEW_CHAT_TITLE
+        if self.new_chat_photo:
+            return ContentType.NEW_CHAT_PHOTO
+        if self.delete_chat_photo:
+            return ContentType.DELETE_CHAT_PHOTO
+        if self.group_chat_created:
+            return ContentType.GROUP_CHAT_CREATED
+        if self.passport_data:
+            return ContentType.PASSPORT_DATA
+        if self.poll:
+            return ContentType.POLL
+        if self.dice:
+            return ContentType.DICE
+        if self.message_auto_delete_timer_changed:
+            return ContentType.MESSAGE_AUTO_DELETE_TIMER_CHANGED
+        if self.voice_chat_started:
+            return ContentType.VOICE_CHAT_STARTED
+        if self.voice_chat_ended:
+            return ContentType.VOICE_CHAT_ENDED
+        if self.voice_chat_participants_invited:
+            return ContentType.VOICE_CHAT_PARTICIPANTS_INVITED
+        if self.text:
+            return ContentType.TEXT
+
+        return ContentType.UNKNOWN
+
+    @property
+    def content_type_last(self) -> str:
+        if self.audio:
+            return ContentType.AUDIO
+        if self.animation:
+            return ContentType.ANIMATION
+        if self.document:
+            return ContentType.DOCUMENT
+        if self.game:
+            return ContentType.GAME
+        if self.photo:
+            return ContentType.PHOTO
+        if self.sticker:
+            return ContentType.STICKER
+        if self.video:
+            return ContentType.VIDEO
+        if self.video_note:
+            return ContentType.VIDEO_NOTE
+        if self.voice:
+            return ContentType.VOICE
+        if self.contact:
+            return ContentType.CONTACT
+        if self.venue:
+            return ContentType.VENUE
+        if self.location:
+            return ContentType.LOCATION
+        if self.new_chat_members:
+            return ContentType.NEW_CHAT_MEMBERS
+        if self.left_chat_member:
+            return ContentType.LEFT_CHAT_MEMBER
+        if self.invoice:
+            return ContentType.INVOICE
+        if self.successful_payment:
+            return ContentType.SUCCESSFUL_PAYMENT
+        if self.connected_website:
+            return ContentType.CONNECTED_WEBSITE
+        if self.migrate_from_chat_id:
+            return ContentType.MIGRATE_FROM_CHAT_ID
+        if self.migrate_to_chat_id:
+            return ContentType.MIGRATE_TO_CHAT_ID
+        if self.pinned_message:
+            return ContentType.PINNED_MESSAGE
+        if self.new_chat_title:
+            return ContentType.NEW_CHAT_TITLE
+        if self.new_chat_photo:
+            return ContentType.NEW_CHAT_PHOTO
+        if self.delete_chat_photo:
+            return ContentType.DELETE_CHAT_PHOTO
+        if self.group_chat_created:
+            return ContentType.GROUP_CHAT_CREATED
+        if self.passport_data:
+            return ContentType.PASSPORT_DATA
+        if self.poll:
+            return ContentType.POLL
+        if self.dice:
+            return ContentType.DICE
+        if self.message_auto_delete_timer_changed:
+            return ContentType.MESSAGE_AUTO_DELETE_TIMER_CHANGED
+        if self.voice_chat_started:
+            return ContentType.VOICE_CHAT_STARTED
+        if self.voice_chat_ended:
+            return ContentType.VOICE_CHAT_ENDED
+        if self.voice_chat_participants_invited:
+            return ContentType.VOICE_CHAT_PARTICIPANTS_INVITED
+        if self.text:
+            return ContentType.TEXT
+
+        return ContentType.UNKNOWN
+
+    @property
+    @functools.cache
+    def content_type_first_cached(self) -> str:
+        if self.text:
+            return ContentType.TEXT
+        if self.audio:
+            return ContentType.AUDIO
+        if self.animation:
+            return ContentType.ANIMATION
+        if self.document:
+            return ContentType.DOCUMENT
+        if self.game:
+            return ContentType.GAME
+        if self.photo:
+            return ContentType.PHOTO
+        if self.sticker:
+            return ContentType.STICKER
+        if self.video:
+            return ContentType.VIDEO
+        if self.video_note:
+            return ContentType.VIDEO_NOTE
+        if self.voice:
+            return ContentType.VOICE
+        if self.contact:
+            return ContentType.CONTACT
+        if self.venue:
+            return ContentType.VENUE
+        if self.location:
+            return ContentType.LOCATION
+        if self.new_chat_members:
+            return ContentType.NEW_CHAT_MEMBERS
+        if self.left_chat_member:
+            return ContentType.LEFT_CHAT_MEMBER
+        if self.invoice:
+            return ContentType.INVOICE
+        if self.successful_payment:
+            return ContentType.SUCCESSFUL_PAYMENT
+        if self.connected_website:
+            return ContentType.CONNECTED_WEBSITE
+        if self.migrate_from_chat_id:
+            return ContentType.MIGRATE_FROM_CHAT_ID
+        if self.migrate_to_chat_id:
+            return ContentType.MIGRATE_TO_CHAT_ID
+        if self.pinned_message:
+            return ContentType.PINNED_MESSAGE
+        if self.new_chat_title:
+            return ContentType.NEW_CHAT_TITLE
+        if self.new_chat_photo:
+            return ContentType.NEW_CHAT_PHOTO
+        if self.delete_chat_photo:
+            return ContentType.DELETE_CHAT_PHOTO
+        if self.group_chat_created:
+            return ContentType.GROUP_CHAT_CREATED
+        if self.passport_data:
+            return ContentType.PASSPORT_DATA
+        if self.poll:
+            return ContentType.POLL
+        if self.dice:
+            return ContentType.DICE
+        if self.message_auto_delete_timer_changed:
+            return ContentType.MESSAGE_AUTO_DELETE_TIMER_CHANGED
+        if self.voice_chat_started:
+            return ContentType.VOICE_CHAT_STARTED
+        if self.voice_chat_ended:
+            return ContentType.VOICE_CHAT_ENDED
+        if self.voice_chat_participants_invited:
+            return ContentType.VOICE_CHAT_PARTICIPANTS_INVITED
+
+        return ContentType.UNKNOWN
+
+    @property
+    def content_type_first(self) -> str:
+        if self.text:
+            return ContentType.TEXT
+        if self.audio:
+            return ContentType.AUDIO
+        if self.animation:
+            return ContentType.ANIMATION
+        if self.document:
+            return ContentType.DOCUMENT
+        if self.game:
+            return ContentType.GAME
+        if self.photo:
+            return ContentType.PHOTO
+        if self.sticker:
+            return ContentType.STICKER
+        if self.video:
+            return ContentType.VIDEO
+        if self.video_note:
+            return ContentType.VIDEO_NOTE
+        if self.voice:
+            return ContentType.VOICE
+        if self.contact:
+            return ContentType.CONTACT
+        if self.venue:
+            return ContentType.VENUE
+        if self.location:
+            return ContentType.LOCATION
+        if self.new_chat_members:
+            return ContentType.NEW_CHAT_MEMBERS
+        if self.left_chat_member:
+            return ContentType.LEFT_CHAT_MEMBER
+        if self.invoice:
+            return ContentType.INVOICE
+        if self.successful_payment:
+            return ContentType.SUCCESSFUL_PAYMENT
+        if self.connected_website:
+            return ContentType.CONNECTED_WEBSITE
+        if self.migrate_from_chat_id:
+            return ContentType.MIGRATE_FROM_CHAT_ID
+        if self.migrate_to_chat_id:
+            return ContentType.MIGRATE_TO_CHAT_ID
+        if self.pinned_message:
+            return ContentType.PINNED_MESSAGE
+        if self.new_chat_title:
+            return ContentType.NEW_CHAT_TITLE
+        if self.new_chat_photo:
+            return ContentType.NEW_CHAT_PHOTO
+        if self.delete_chat_photo:
+            return ContentType.DELETE_CHAT_PHOTO
+        if self.group_chat_created:
+            return ContentType.GROUP_CHAT_CREATED
+        if self.passport_data:
+            return ContentType.PASSPORT_DATA
+        if self.poll:
+            return ContentType.POLL
+        if self.dice:
+            return ContentType.DICE
+        if self.message_auto_delete_timer_changed:
+            return ContentType.MESSAGE_AUTO_DELETE_TIMER_CHANGED
+        if self.voice_chat_started:
+            return ContentType.VOICE_CHAT_STARTED
+        if self.voice_chat_ended:
+            return ContentType.VOICE_CHAT_ENDED
+        if self.voice_chat_participants_invited:
+            return ContentType.VOICE_CHAT_PARTICIPANTS_INVITED
+
+        return ContentType.UNKNOWN
+
 
     @property
     def content_type(self) -> str:

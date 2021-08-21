@@ -1,46 +1,70 @@
 import logging
-from typing import Any
+from datetime import datetime
 
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher
 from aiogram.types import Message
 
-TOKEN = "42:TOKEN"
+TOKEN = "BOT TOKEN"
 dp = Dispatcher()
 
 logger = logging.getLogger(__name__)
 
 
 @dp.message(commands={"start"})
-async def command_start_handler(message: Message) -> None:
-    """
-    This handler receive messages with `/start` command
-    """
-    # Most of event objects has an aliases for API methods to be called in event context
-    # For example if you want to answer to incoming message you can use `message.answer(...)` alias
-    # and the target chat will be passed to :ref:`aiogram.methods.send_message.SendMessage` method automatically
-    # or call API method directly via Bot instance: `bot.send_message(chat_id=message.chat.id, ...)`
-    await message.answer(f"Hello, <b>{message.from_user.full_name}!</b>")
+async def command_start_handler(message: Message, event_update) -> None:
+    times = 1_000_000
+    event = event_update
 
+    print(f"Call times: {times}")
+    start = datetime.now()
+    for _ in range(times):
+        event.event_last_cached
+    print("Update type last     Cached", datetime.now() - start)
 
-@dp.message()
-async def echo_handler(message: types.Message) -> Any:
-    """
-    Handler will forward received message back to the sender
+    start2 = datetime.now()
+    for _ in range(times):
+        event.event_last
+    print("Update type last     Uncached", datetime.now() - start2)
 
-    By default message handler will handle all message types (like text, photo, sticker and etc.)
-    """
-    try:
-        # Send copy of the received message
-        await message.send_copy(chat_id=message.chat.id)
-    except TypeError:
-        # But not all the types is supported to be copied so need to handle it
-        await message.answer("Nice try!")
+    print("--------------------------------------------------------")
+
+    start = datetime.now()
+    for _ in range(times):
+        event.event_first_cached
+    print("Update type first    Cached", datetime.now() - start)
+
+    start2 = datetime.now()
+    for _ in range(times):
+        event.event_first
+    print("Update type first    Uncached", datetime.now() - start2)
+
+    print("--------------------------------------------------------")
+
+    start = datetime.now()
+    for _ in range(times):
+        event.message.content_type_last_cached
+    print("Message type last    Cached", datetime.now() - start)
+
+    start2 = datetime.now()
+    for _ in range(times):
+        event.message.content_type_last
+    print("Message type last    Uncached", datetime.now() - start2)
+
+    print("--------------------------------------------------------")
+
+    start = datetime.now()
+    for _ in range(times):
+        event.message.content_type_first_cached
+    print("Message type first   Cached", datetime.now() - start)
+
+    start2 = datetime.now()
+    for _ in range(times):
+        event.message.content_type_first
+    print("Message type first   Uncached", datetime.now() - start2)
 
 
 def main() -> None:
-    # Initialize Bot instance with an default parse mode which will be passed to all API calls
     bot = Bot(TOKEN, parse_mode="HTML")
-    # And the run events dispatching
     dp.run_polling(bot)
 
 
