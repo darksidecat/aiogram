@@ -101,16 +101,30 @@ class TelegramEventObserver:
 
         return middlewares
 
-    def resolve_filters(self, full_config: Dict[str, Any]) -> List[BaseFilter]:
+    def resolve_filters(
+        self, full_config: Dict[str, Any], ignore_optional: bool = True
+    ) -> List[BaseFilter]:
         """
         Resolve keyword filters via filters factory
+
+        :param ignore_optional: Ignore to resolving filters with only optional fields that are not in full_config
         """
         filters: List[BaseFilter] = []
-        if not full_config:
-            return filters
+
+        if ignore_optional:
+            if not full_config:
+                return filters
 
         validation_errors = []
         for bound_filter in self._resolve_filters_chain():
+            # skip filter with no fields in full_config
+            if ignore_optional:
+                full_config_keys = set(full_config.keys())
+                filter_fields = set(bound_filter.__fields__.keys())
+
+                if not full_config_keys.intersection(filter_fields):
+                    continue
+
             # Try to initialize filter.
             try:
                 f = bound_filter(**full_config)
@@ -145,7 +159,7 @@ class TelegramEventObserver:
         """
         Register event handler
         """
-        resolved_filters = self.resolve_filters(bound_filters)
+        resolved_filters = self.resolve_filters(bound_filters, ignore_optional=False)
         self.handlers.append(
             HandlerObject(
                 callback=callback,

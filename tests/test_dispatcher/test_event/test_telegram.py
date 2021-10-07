@@ -1,6 +1,6 @@
 import datetime
 import functools
-from typing import Any, Awaitable, Callable, Dict, NoReturn, Union
+from typing import Any, Awaitable, Callable, Dict, NoReturn, Optional, Union
 
 import pytest
 
@@ -105,6 +105,51 @@ class TestTelegramEventObserver:
         # Bad argument type
         with pytest.raises(FiltersResolveError, match="Unknown keyword filters: {'test'}"):
             assert observer.resolve_filters({"test": ...})
+
+    def test_not_autoresolve_optional_filters(self):
+        class OptionalFilter(BaseFilter):
+            a: Optional[str] = None
+
+            async def __call__(self, *args: Any, **kwargs: Any) -> Union[bool, Dict[str, Any]]:
+                return True
+
+        router = Router(use_builtin_filters=False)
+        observer = router.message
+        observer.bind_filter(MyFilter1)
+        observer.bind_filter(OptionalFilter)
+
+        observer.filter(test="test")
+        assert len(observer._handler.filters) == 1
+
+    def test_register_autoresolve_optional_filters(self):
+        class OptionalFilter(BaseFilter):
+            a: Optional[str] = None
+
+            async def __call__(self, *args: Any, **kwargs: Any) -> Union[bool, Dict[str, Any]]:
+                return True
+
+        router = Router(use_builtin_filters=False)
+        observer = router.message
+        observer.bind_filter(MyFilter1)
+        observer.bind_filter(OptionalFilter)
+
+        assert observer.register(my_handler) == my_handler
+        assert isinstance(observer.handlers[0], HandlerObject)
+        assert isinstance(observer.handlers[0].filters[0].callback, OptionalFilter)
+        assert len(observer.handlers[0].filters) == 1
+        assert isinstance(observer.handlers[0].filters[0].callback, OptionalFilter)
+
+        observer.register(my_handler, test="ok")
+        assert isinstance(observer.handlers[1], HandlerObject)
+        assert len(observer.handlers[1].filters) == 2
+        assert isinstance(observer.handlers[1].filters[0].callback, MyFilter1)
+        assert isinstance(observer.handlers[1].filters[1].callback, OptionalFilter)
+
+        observer.register(my_handler, test="ok", a="ok")
+        assert isinstance(observer.handlers[2], HandlerObject)
+        assert len(observer.handlers[2].filters) == 2
+        assert isinstance(observer.handlers[2].filters[0].callback, MyFilter1)
+        assert isinstance(observer.handlers[2].filters[1].callback, OptionalFilter)
 
     def test_register(self):
         router = Router(use_builtin_filters=False)
