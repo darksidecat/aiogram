@@ -107,13 +107,13 @@ class TelegramEventObserver:
         """
         Resolve keyword filters via filters factory
 
-        :param ignore_optional: Ignore to resolving filters with only optional fields that are not in full_config
+filter with optional field resolving rework        :param full_config: keyword arguments for  bounded filters initialization for router/handler
+        :param ignore_optional: ignore to resolving filters with only optional arguments that are not in full_config
         """
         filters: List[BaseFilter] = []
 
-        if ignore_optional:
-            if not full_config:
-                return filters
+        if ignore_optional and not full_config:
+            return filters
 
         validation_errors = []
         for bound_filter in self._resolve_filters_chain():
