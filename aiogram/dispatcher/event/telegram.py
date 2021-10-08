@@ -107,7 +107,7 @@ class TelegramEventObserver:
         """
         Resolve keyword filters via filters factory
 
-filter with optional field resolving rework        :param full_config: keyword arguments for  bounded filters initialization for router/handler
+        :param full_config: keyword arguments for bounded filters initialization for router/handler
         :param ignore_optional: ignore to resolving filters with only optional arguments that are not in full_config
         """
         filters: List[BaseFilter] = []
