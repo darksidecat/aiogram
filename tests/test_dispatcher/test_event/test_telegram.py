@@ -46,7 +46,7 @@ class MyFilter3(MyFilter1):
 
 
 class OptionalFilter(BaseFilter):
-    optional: Optional[str] = None
+    optional: Optional[str]
 
     async def __call__(self, *args: Any, **kwargs: Any) -> Union[bool, Dict[str, Any]]:
         return True
