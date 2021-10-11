@@ -121,7 +121,7 @@ class TelegramEventObserver:
         """
         Resolve keyword filters via filters factory
 
-        :param filters:
+        :param filters: positional filters
         :param full_config: keyword arguments to initialize bounded filters for router/handler
         :param ignore_default: ignore to resolving filters with only default arguments that are not in full_config
         """
