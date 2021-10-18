@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import contextvars
 import warnings
-from asyncio import CancelledError, Future, Lock
+from asyncio import CancelledError, Future, Lock, Task
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 from .. import loggers
@@ -39,6 +39,8 @@ class Dispatcher(Router):
         **kwargs: Any,
     ) -> None:
         super(Dispatcher, self).__init__(**kwargs)
+
+        self._bots_pollings: Dict[int, Task] = {}
 
         # Telegram API provides originally only one event type - Update
         # For making easily interactions with events here is registered handler which helps
@@ -350,6 +352,63 @@ class Dispatcher(Router):
 
         return None
 
+    async def start_bot_polling(
+        self,
+        bot: Bot,
+        polling_timeout: int = 10,
+        handle_as_tasks: bool = True,
+        backoff_config: BackoffConfig = DEFAULT_BACKOFF_CONFIG,
+        allowed_updates: Optional[List[str]] = None,
+        **kwargs: Any,
+    ) -> None:
+        """
+        Polling runner
+
+        :param bot:
+        :param polling_timeout:
+        :param handle_as_tasks:
+        :param kwargs:
+        :param backoff_config:
+        :param allowed_updates: List of the update types you want your bot to receive
+        :return:
+        """
+        workflow_data = {"dispatcher": self, "bot": bot}
+        workflow_data.update(kwargs)
+        await self.emit_startup(**workflow_data)
+        loggers.dispatcher.info("Start poling")
+        try:
+            user: User = await bot.me()
+            loggers.dispatcher.info(
+                "Run polling for bot @%s id=%d - %r", user.username, bot.id, user.full_name
+            )
+
+            polling_task = asyncio.create_task(
+                self._polling(
+                    bot=bot,
+                    handle_as_tasks=handle_as_tasks,
+                    polling_timeout=polling_timeout,
+                    backoff_config=backoff_config,
+                    allowed_updates=allowed_updates,
+                    **kwargs,
+                )
+            )
+            self._bots_pollings[bot.id] = polling_task
+            await polling_task
+        except CancelledError:
+            loggers.dispatcher.info("Polling task Canceled")
+        finally:
+            try:
+                await self.emit_shutdown(**workflow_data)
+                loggers.dispatcher.info(
+                    "Polling stopped for bot @%s id=%d - %r", user.username, bot.id, user.full_name
+                )
+            finally:
+                await bot.session.close()
+
+    def stop_bot_polling(self, bot_id: int):
+        polling_task = self._bots_pollings.pop(bot_id)
+        polling_task.cancel()
+
     async def start_polling(
         self,
         *bots: Bot,
@@ -369,34 +428,20 @@ class Dispatcher(Router):
         :param backoff_config:
         :return:
         """
-        async with self._running_lock:  # Prevent to run this method twice at a once
-            workflow_data = {"dispatcher": self, "bots": bots, "bot": bots[-1]}
-            workflow_data.update(kwargs)
-            await self.emit_startup(**workflow_data)
-            loggers.dispatcher.info("Start poling")
-            try:
-                coro_list = []
-                for bot in bots:
-                    user: User = await bot.me()
-                    loggers.dispatcher.info(
-                        "Run polling for bot @%s id=%d - %r", user.username, bot.id, user.full_name
-                    )
-                    coro_list.append(
-                        self._polling(
-                            bot=bot,
-                            handle_as_tasks=handle_as_tasks,
-                            polling_timeout=polling_timeout,
-                            backoff_config=backoff_config,
-                            allowed_updates=allowed_updates,
-                            **kwargs,
-                        )
-                    )
-                await asyncio.gather(*coro_list)
-            finally:
-                for bot in bots:  # Close sessions
-                    await bot.session.close()
-                loggers.dispatcher.info("Polling stopped")
-                await self.emit_shutdown(**workflow_data)
+        pollings = []
+        for bot in bots:
+            pollings.append(
+                self.start_bot_polling(
+                    bot=bot,
+                    handle_as_tasks=handle_as_tasks,
+                    polling_timeout=polling_timeout,
+                    backoff_config=backoff_config,
+                    allowed_updates=allowed_updates,
+                    **kwargs,
+                )
+            )
+
+        await asyncio.gather(*pollings)
 
     def run_polling(
         self,
