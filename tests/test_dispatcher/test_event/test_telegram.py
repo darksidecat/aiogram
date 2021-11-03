@@ -113,7 +113,7 @@ class TestTelegramEventObserver:
                 assert "test" in data
                 return True
 
-        router1 = Router(use_builtin_filters=False)
+        router1 = Router(use_builtin_filters=False, root_router=True)
         router2 = Router(use_builtin_filters=False)
         router1.include_router(router2)
 
@@ -155,7 +155,7 @@ class TestTelegramEventObserver:
             observer.resolve_filters((MyFilter1(test="test"),), {"test": ...})
 
     def test_dont_autoresolve_optional_filters_for_router(self):
-        router = Router(use_builtin_filters=False)
+        router = Router(use_builtin_filters=False, root_router=True)
         observer = router.message
         observer.bind_filter(MyFilter1)
         observer.bind_filter(OptionalFilter)
@@ -165,7 +165,7 @@ class TestTelegramEventObserver:
         assert len(observer._handler.filters) == 1
 
     def test_register_autoresolve_optional_filters(self):
-        router = Router(use_builtin_filters=False)
+        router = Router(use_builtin_filters=False, root_router=True)
         observer = router.message
         observer.bind_filter(MyFilter1)
         observer.bind_filter(OptionalFilter)
@@ -193,7 +193,7 @@ class TestTelegramEventObserver:
         assert isinstance(observer.handlers[2].filters[2].callback, DefaultFilter)
 
     def test_register(self):
-        router = Router(use_builtin_filters=False)
+        router = Router(use_builtin_filters=False, root_router=True)
         observer = router.message
         observer.bind_filter(MyFilter1)
 
@@ -324,7 +324,7 @@ class TestTelegramEventObserver:
         assert middlewares == [my_middleware1, my_middleware2, my_middleware3]
 
     def test_register_global_filters(self):
-        router = Router(use_builtin_filters=False)
+        router = Router(use_builtin_filters=False, root_router=True)
         assert isinstance(router.message._handler.filters, list)
         assert not router.message._handler.filters
 
@@ -340,7 +340,7 @@ class TestTelegramEventObserver:
         assert router.message._handler.filters[0].callback is my_filter
 
     async def test_global_filter(self):
-        r1 = Router()
+        r1 = Router(root_router=True)
         r2 = Router()
 
         async def handler(evt):
@@ -354,7 +354,7 @@ class TestTelegramEventObserver:
         assert await r2.message.trigger(None) is None
 
     async def test_global_filter_in_nested_router(self):
-        r1 = Router()
+        r1 = Router(root_router=True)
         r2 = Router()
 
         async def handler(evt):
@@ -365,3 +365,40 @@ class TestTelegramEventObserver:
         r2.message.register(handler)
 
         assert await r1.message.trigger(None) is REJECTED
+
+    async def test_post_filters_resolving(self):
+        async def handler(m):
+            pass
+
+        r1 = Router(root_router=True, use_builtin_filters=False)
+        r2 = Router(use_builtin_filters=False)
+        r3 = Router(use_builtin_filters=False)
+        r4 = Router(use_builtin_filters=False)
+
+        r1.message.bind_filter(MyFilter1)
+        r1.message.filter(test="test")
+        r2.message.filter(test="test")
+        r3.message.filter(test="test")
+        r4.message.filter(test="test")
+
+        r4.message.register(handler, test="test")
+
+        r2.include_router(r4)
+        r1.include_router(r2)
+        r2.include_router(r3)
+
+        f_callback = MyFilter1(test="test")
+        f1 = r1.message._handler.filters
+        f2 = r2.message._handler.filters
+        f3 = r3.message._handler.filters
+        f4 = r4.message._handler.filters
+        fh = r4.message.handlers[0].filters
+
+        assert f_callback == f1[0].callback
+        assert f1 == f2 == f3 == f4 == fh
+        assert len(f1) == 1
+
+        r1.message.bind_filter(DefaultFilter)
+        r4.message.filter(default="test")
+
+        assert len(f4) == 2

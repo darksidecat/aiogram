@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from itertools import chain
 from typing import Any, Dict, Generator, List, Optional, Set, Union
 
 from ..types import TelegramObject
@@ -8,6 +9,7 @@ from ..utils.imports import import_module
 from ..utils.warnings import CodeHasNoEffect
 from .event.bases import REJECTED, UNHANDLED
 from .event.event import EventObserver
+from .event.handler import FilterObject
 from .event.telegram import TelegramEventObserver
 from .filters import BUILTIN_FILTERS
 
@@ -25,13 +27,19 @@ class Router:
     - By decorator - :obj:`@router.<event_type>(<filters, ...>)`
     """
 
-    def __init__(self, use_builtin_filters: bool = True, name: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        use_builtin_filters: bool = True,
+        name: Optional[str] = None,
+        root_router: bool = False,
+    ) -> None:
         """
 
         :param use_builtin_filters: `aiogram` has many builtin filters and you can controll automatic registration of this filters in factory
         :param name: Optional router name, can be useful for debugging
         """
 
+        self.root_router = root_router
         self.use_builtin_filters = use_builtin_filters
         self.name = name or hex(id(self))
 
@@ -221,7 +229,26 @@ class Router:
             raise ValueError(
                 f"router should be instance of Router not {type(router).__class__.__name__}"
             )
+        if router.root_router:
+            raise RuntimeError("Root router can`t be included")
         router.parent_router = self
+
+        head_router = tuple(router.chain_head)[-1]
+        if head_router.root_router:
+            for r in router.chain_tail:
+                for observer in r.observers.values():
+                    for handler in chain(observer.handlers, (observer._handler,)):
+                        if not handler.filters_resolved:
+                            resolved_filters = observer.resolve_filters(
+                                handler.filters_config_pos,
+                                handler.filters_config_key,
+                                ignore_default=handler is observer._handler,
+                            )
+                            handler.filters = [
+                                FilterObject(filter_)
+                                for filter_ in chain(resolved_filters, handler.filters_config_pos)
+                            ]
+                            handler.filters_resolved = True
         return router
 
     async def emit_startup(self, *args: Any, **kwargs: Any) -> None:

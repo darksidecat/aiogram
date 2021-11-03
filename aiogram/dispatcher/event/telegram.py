@@ -62,12 +62,16 @@ class TelegramEventObserver:
         :param filters: positional filters
         :param bound_filters: keyword filters
         """
-        resolved_filters = self.resolve_filters(filters, bound_filters)
-        if self._handler.filters is None:
-            self._handler.filters = []
-        self._handler.filters.extend(
-            [FilterObject(filter_) for filter_ in chain(resolved_filters, filters)]
-        )
+        head_router = tuple(self.router.chain_head)[-1]
+        if head_router.root_router:
+            resolved_filters = self.resolve_filters(filters, bound_filters, ignore_default=True)
+            if self._handler.filters is None:
+                self._handler.filters = []
+            self._handler.filters.extend(
+                [FilterObject(filter_) for filter_ in chain(resolved_filters, filters)]
+            )
+        self._handler.filters_config_pos += filters
+        self._handler.filters_config_key.update(bound_filters)
 
     def bind_filter(self, bound_filter: Type[BaseFilter]) -> None:
         """
@@ -180,11 +184,19 @@ class TelegramEventObserver:
         """
         Register event handler
         """
-        resolved_filters = self.resolve_filters(filters, bound_filters, ignore_default=False)
+
+        attached_to_root_router = tuple(self.router.chain_head)[-1].root_router
+        if attached_to_root_router:
+            resolved_filters = self.resolve_filters(filters, bound_filters, ignore_default=False)
+        else:
+            resolved_filters = []
         self.handlers.append(
             HandlerObject(
                 callback=callback,
                 filters=[FilterObject(filter_) for filter_ in chain(resolved_filters, filters)],
+                filters_config_pos=filters,
+                filters_config_key=bound_filters,
+                filters_resolved=attached_to_root_router,
             )
         )
         return callback

@@ -64,6 +64,9 @@ class FilterObject(CallableMixin):
 class HandlerObject(CallableMixin):
     callback: HandlerType
     filters: Optional[List[FilterObject]] = None
+    filters_config_pos: Tuple[FilterType, ...] = field(default_factory=tuple)
+    filters_config_key: Dict[str, Any] = field(default_factory=dict)
+    filters_resolved: bool = False
 
     def __post_init__(self) -> None:
         super(HandlerObject, self).__post_init__()

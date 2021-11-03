@@ -123,7 +123,7 @@ class TestRouter:
             skip("KABOOM")
 
     async def test_global_filter_in_nested_router(self):
-        r1 = Router()
+        r1 = Router(root_router=True)
         r2 = Router()
 
         async def handler(evt):
@@ -134,3 +134,10 @@ class TestRouter:
         r2.message.register(handler)
 
         assert await r1.propagate_event(update_type="message", event=None) is UNHANDLED
+
+    async def test_include_root_router_raise(self):
+        r1 = Router(root_router=True)
+        r2 = Router(root_router=True)
+
+        with pytest.raises(RuntimeError, match="Root router can`t be included"):
+            r1.include_router(r2)

@@ -38,7 +38,7 @@ class Dispatcher(Router):
         isolate_events: bool = False,
         **kwargs: Any,
     ) -> None:
-        super(Dispatcher, self).__init__(**kwargs)
+        super(Dispatcher, self).__init__(root_router=True, **kwargs)
 
         # Telegram API provides originally only one event type - Update
         # For making easily interactions with events here is registered handler which helps
